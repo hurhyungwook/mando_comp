@@ -28,13 +28,11 @@ class Detection:
         self.gain = 0
         self.semaphore = 0
         self.count = 0
-        # self.pixelRate_km = (138-38)/(400-313) #픽셀과 실제 거리비율
-        self.pixelRate_mando = 0
-
-        # self.xThresh_km = 33
-        # self.yThresh_km = 313
-        # self.distance_km = 115 # 국민대 차선과 중심간의 거리
-        # self.lanewidth_km = 0.175
+        self.pixelRate_km = (138-38)/(400-313) #픽셀과 실제 거리비율
+        self.xThresh_km = 33
+        self.yThresh_km = 313
+        self.distance_km = 115 # 국민대 차선과 중심간의 거리
+        self.lanewidth_km = 0.175
         self.error = 0
         self.gps_const = 0
         
@@ -80,8 +78,6 @@ class Detection:
             cv2.imshow("canny_img",edges)
 
             #################### hough line transform, 기울기 구하기 ###################
-            # lines = hough_lines2(edges)
-
             #bagfile#
             mask , _shape = roi(edges)
             cv2.imshow("roi",mask)
@@ -90,18 +86,21 @@ class Detection:
             ###try를 사용해서 초기에 line이 검출되지 않으면 작동이 안할 수도 있음. 
             ##pass구문 대신에 속도를 유지하는 방향으로 사용하는 것이 좋아보임
             try:      
-                rho = 0.8
+                rho = 2
                 theta = np.pi/180
                 threshold = 90
-                min_line_len = 0
+                min_line_len = 50
                 max_line_gap = 300     
-                lines = hough_lines(mask,rho,theta,threshold,min_line_len,max_line_gap)
-                cv2.imshow("lines",lines)
+                lines_img = hough_lines(mask,rho,theta,threshold,min_line_len,max_line_gap)
+                cv2.imshow("lines",lines_img)
+                lines = hough_lines2(mask,rho,theta,threshold,min_line_len,max_line_gap)
+
 
             except : pass
                 
+            #차선의 기울기를 이용해서 어느방향 차선인지 구분
             
-            upperPt, lowerPt = getLines(img,lines)
+            upperPt, lowerPt = getLines(resized_img,lines)
             if upperPt!=None and lowerPt!=None:
                 # print(f' upper : {len(upperPt)}')
                 # print(f' lower : {len(lowerPt)}')
@@ -111,13 +110,13 @@ class Detection:
                     if (upperPt[0][1]-lowerPt[0][1])/(upperPt[0][0]-lowerPt[0][0])>0: # 오른쪽 차선
                         # goal = centerX - (self.pixelRate_sd * (centerY-self.yThresh_sd) + self.xThresh_sd)
                         goal = centerX - (self.pixelRate_km * (centerY-self.yThresh_km) + self.xThresh_km)
-                        cv2.circle(img, (int(goal), centerY), 10, [0,255,255])
-                        cv2.circle(img, (int(goal-70), centerY), 10, [0,0,255])
+                        cv2.circle(resized_img, (int(goal), centerY), 10, [0,255,255])
+                        cv2.circle(resized_img, (int(goal-70), centerY), 10, [0,0,255])
                         goal = goal-70
-                        text="RIGHT"    
+                        text=" RIGHT"    
                         org=(int(goal), centerY)
                         font=cv2.FONT_HERSHEY_SIMPLEX
-                        cv2.putText(img,text,org,font,1,(255,0,0),2)
+                        cv2.putText(resized_img,text,org,font,1,(255,0,0),2)
                         # error = (goal-w//2)*(self.lanewidth_sd/sel    f.distance_sd)
                         error = (goal-w//2)*(self.lanewidth_km/self.distance_km)
                         self.cte_pub.publish(error)
@@ -139,11 +138,11 @@ class Detection:
 
                 elif len(upperPt)==2:
                     crossX, crossY = calculate_intersection(upperPt, lowerPt)
-                    cv2.circle(img, (crossX, crossY), 10, [0,255,255])
+                    cv2.circle(resized_img, (crossX, crossY), 10, [0,255,255])
                     text="CROSS"    
                     org=(crossX, crossY)
                     font=cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(img,text,org,font,1,(255,0,0),2)
+                    cv2.putText(resized_img,text,org,font,1,(255,0,0),2)
                     # error = (crossX-w//2)*(self.lanewidth_sd/self.distance_sd)
                     error = (crossX-w//2)*(self.lanewidth_km/self.distance_km)
                     self.cte_pub.publish(error)
@@ -154,7 +153,7 @@ class Detection:
                 if self.prev_goal is not None:
                     goal = self.prev_goal
                     print(goal)
-            cv2.line(img, (w//2,h), (w//2,h-30), color=[0,0,255], thickness=2)
+            cv2.line(resized_img, (w//2,h), (w//2,h-30), color=[0,0,255], thickness=2)
 
             # 신호등 발견시 
             cnt = 0
@@ -205,5 +204,3 @@ if __name__ == '__main__':
     
     Detection()
     rospy.spin()
-
-##추가적인 수정 필요. line검출확인상태
