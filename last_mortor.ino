@@ -27,8 +27,8 @@ void cmd_vel_callback(const geometry_msgs::Twist&msg){
 }
 ros::Subscriber<geometry_msgs::Twist> cmd_sub("cmd_vel", cmd_vel_callback);
 ros::Publisher cmd_pub("cmd_vel2", &cmd_vel);
-ros::Publisher encoder_pub1("/encoder1", &encoder_data1);
-ros::Publisher encoder_pub2("/encoder2", &encoder_data2);
+ros::Publisher encoder_pub1("encoder1", &encoder_data1);
+ros::Publisher encoder_pub2("encoder2", &encoder_data2);
 ros::Publisher sonar_pub1("sonar1", &sonar_data1);
 
 NewPing sonar[SONAR_NUM] = {   // Sensor object array.
@@ -74,7 +74,7 @@ union
 #define MOTOR3_ENB 10
 
 float Kp = 15.5;
-float Ki = 3.5;
+float Ki = 6.5;
 float Kd = 4.5; //PID 상수 설정, 실험에 따라 정해야 함 중요!
 double Setpoint, Input, Output; //PID 제어 변수
 double error, error_old;
@@ -139,19 +139,15 @@ void steering_control()
 
 #include <SPI.h>
 
-#define ENC1_ADD 23
-#define ENC2_ADD 22
-signed long encoder1count = 0;
-signed long encoder2count = 0;
+#define ENC1_ADD 22
+
 
 void initEncoders() {    
   // Set slave selects as outputs
   pinMode(ENC1_ADD, OUTPUT);
-  pinMode(ENC2_ADD, OUTPUT);
   // Raise select pins
   // Communication begins when you drop the individual select signsl
   digitalWrite(ENC1_ADD,HIGH);
-  digitalWrite(ENC2_ADD,HIGH);
 
   SPI.begin();
  
@@ -166,36 +162,21 @@ void initEncoders() {
   SPI.transfer(0x03);                       // Configure to 4 byte mode
   digitalWrite(ENC1_ADD,HIGH);       // Terminate SPI conversation
 
-  // Initialize encoder 2
-  // Clock division factor: 0
-  // Negative index input
-  // free-running count mode
-  // x4 quatrature count mode (four counts per quadrature cycle)
-  // NOTE: For more information on commands, see datasheet
-  digitalWrite(ENC2_ADD,LOW);        // Begin SPI conversation
-  SPI.transfer(0x88);                       // Write to MDR0
-  SPI.transfer(0x03);                       // Configure to 4 byte mode
-  digitalWrite(ENC2_ADD,HIGH);       // Terminate SPI conversation
 }
 
 long readEncoder(int encoder_no)
 {
- 
   // Initialize temporary variables for SPI read
   unsigned int count_1, count_2, count_3, count_4;
   long count_value;  
- 
- 
-    digitalWrite(ENC1_ADD + encoder_no-1,LOW);      // Begin SPI conversation
-   // digitalWrite(ENC4_ADD,LOW);      // Begin SPI conversation
-    SPI.transfer(0x60);                     // Request count
-    count_1 = SPI.transfer(0x00);           // Read highest order byte
-    count_2 = SPI.transfer(0x00);          
-    count_3 = SPI.transfer(0x00);          
-    count_4 = SPI.transfer(0x00);           // Read lowest order byte
-    digitalWrite(ENC1_ADD+encoder_no-1,HIGH);     // Terminate SPI conversation
-    //digitalWrite(ENC4_ADD,HIGH);      // Begin SPI conversation
-// Calculate encoder count
+  digitalWrite(ENC1_ADD + encoder_no-1,LOW);      // Begin SPI conversation
+  SPI.transfer(0x60);                     // Request count
+  count_1 = SPI.transfer(0x00);           // Read highest order byte
+  count_2 = SPI.transfer(0x00);          
+  count_3 = SPI.transfer(0x00);          
+  count_4 = SPI.transfer(0x00);           // Read lowest order byte
+  digitalWrite(ENC1_ADD+encoder_no-1,HIGH);     // Terminate SPI conversation
+//Calculate encoder count
   count_value= ((long)count_1<<24) + ((long)count_2<<16) + ((long)count_3<<8 ) + (long)count_4;
  
   return count_value;
@@ -305,29 +286,6 @@ void control_callback()
   steering_control();  
 }
 
-///////////////////////////////// Serial Event  /////////////////////////////////////
-
-void Serial_read_data(){
-  if(Serial.available()){
-    for(int i=0; i<9; i++){
-      buf[i]= Serial.read();
-      //Serial.println(buf[cnt]);
-      }
-    }
-   if((buf[0]=='#') &&(buf[1]=='C') && ( buf[8] == '*') )
-    {
-      m_car_angle_int16.bytedata[0] = buf[2];
-      m_car_angle_int16.bytedata[1] = buf[3];
-     
-      m_car_speed_float.bytedata[0] = buf[4];      
-      m_car_speed_float.bytedata[1] = buf[5];      
-      m_car_speed_float.bytedata[2] = buf[6];      
-      m_car_speed_float.bytedata[3] = buf[7];
-     
-      //Serial.print(m_car_angle_int16.data);  Serial.print(" ");  Serial.print(m_car_speed_float.data);  Serial.print(" ");  Serial.print(encoder1count);  Serial.print(" ");  Serial.println(encoder2count);
-    }
-  }
-
 
 ///////////////////////////////// Setup  /////////////////////////////////////
 
@@ -352,20 +310,16 @@ void setup() {
   pinMode(MOTOR3_PWM, OUTPUT);
   pinMode(MOTOR3_ENA, OUTPUT);  // L298 motor control direction
   pinMode(MOTOR3_ENB, OUTPUT);  // L298 motor control PWM
+
+  initEncoders();          // initialize encode
+  clearEncoderCount(1); 
   
   nh.initNode();
   nh.subscribe(cmd_sub);
   nh.advertise(encoder_pub1);
-  nh.advertise(encoder_pub2);
   nh.advertise(sonar_pub1);
  
-  // Encoder
-  Serial.print("Encoder 1: ");
-  Serial.println(readEncoder(1));
-  Serial.print("Encoder 2: ");
-  Serial.println(readEncoder(2));       // initialize encoder
-  clearEncoderCount(1);
-  clearEncoderCount(2);
+
 
   error = error_s = error_d = error_old = 0.0;
   pwm_output = 0;
@@ -383,14 +337,8 @@ void loop() {
   motor_control(f_speed,r_speed);
   cmd_vel.linear.x=velocity;
   cmd_vel.angular.z=steer_angle;
-  encoder_data1.data = readEncoder(1); // Assuming encoder 1 is on the left wheel
-  encoder_data2.data = readEncoder(2); // Assuming encoder 2 is on the right wheel
-  Serial.print("Encoder 1: ");
-  Serial.println(readEncoder(1));
-  Serial.print("Encoder 2: ");
-  Serial.println(readEncoder(2));
+  encoder_data1.data = -1 * readEncoder(1); // Assuming encoder 1 is on the left wheel
   encoder_pub1.publish(&encoder_data1);
-  encoder_pub2.publish(&encoder_data2);
   sonar_data1.data = sonar[0].ping_cm()/100.0;
   sonar_pub1.publish(&sonar_data1);
   delay(20);
