@@ -256,7 +256,7 @@ int main(int argc, char **argv)
  
   ros::Subscriber sonar_sub1 = n.subscribe("/sonar1", 10, &sonar1Callback);
 
-  ros::Publisher teleop_cmd_vel_pub = n.advertise<geometry_msgs::Twist>("teleop_cmd_vel", 10);
+  ros::Publisher teleop_cmd_vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel", 10);
   
   ros::Publisher car_control_pub1 = n.advertise<std_msgs::Int16>("Car_Control/SteerAngle_Int16", 10);
   ros::Publisher car_control_pub2 = n.advertise<std_msgs::Int16>("Car_Control/Speed_Int16", 10);
@@ -306,16 +306,16 @@ int main(int argc, char **argv)
     //printf("imu offset %3.1lf \n",imu_offset_angle);
     if(steering_angle != steering_angle_old) 
     {
-       teleop_cmd_vel_data.angular.z = steering_angle;
-	   teleop_cmd_vel_data.linear.x  = motor_speed_cmd;
-       teleop_cmd_vel_pub.publish(teleop_cmd_vel_data) ;
+       cmd_vel_data.angular.z = steering_angle;
+       cmd_vel_data.linear.x  = motor_speed_cmd;
+       teleop_cmd_vel_pub.publish(cmd_vel_data);
     }
     
     if(motor_speed != motor_speed_old)
     {    
-       teleop_cmd_vel_data.angular.z = steering_angle;
-	   teleop_cmd_vel_data.linear.x  = motor_speed_cmd;
-       teleop_cmd_vel_pub.publish(teleop_cmd_vel_data) ;
+        cmd_vel_data.angular.z = steering_angle;
+	cmd_vel_data.linear.x  = motor_speed_cmd;
+        teleop_cmd_vel_pub.publish(cmd_vel_data);
     } 
    
     steering_angle_old = steering_angle;
