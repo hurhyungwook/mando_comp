@@ -246,13 +246,13 @@ int main(int argc, char **argv)
   std_msgs::Int16 steerangle;
   std_msgs::Int16 carspeed;
     
-  geometry_msgs::Twist teleop_cmd_vel_data;
+  geometry_msgs::Twist cmd_vel_data;
   
   ros::Subscriber sub1 = n.subscribe("/cmd_vel", 10, &CarControlCallback);
   ros::Subscriber sub2 = n.subscribe("/Car_Control_cmd/SteerAngle_Int16",10, &CarSteerControlCallback);  
   ros::Subscriber sub3 = n.subscribe("/scan", 1000, &scanCallback);
   ros::Subscriber subEncoder1 = n.subscribe("/encoder1",10,&encoder1Callback); 
-  ros::Subscriber subIMU = n.subscribe("/imu/data, 20, &imuCallback);  // imu data susscribe
+  ros::Subscriber subIMU = n.subscribe("/imu/data", 20, &imuCallback);  // imu data susscribe
  
   ros::Subscriber sonar_sub1 = n.subscribe("/sonar1", 10, &sonar1Callback);
 
