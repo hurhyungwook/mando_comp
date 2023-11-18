@@ -73,9 +73,9 @@ union
 #define MOTOR3_ENA 9
 #define MOTOR3_ENB 10
 
-float Kp = 15.5;
-float Ki = 6.5;
-float Kd = 4.5; //PID 상수 설정, 실험에 따라 정해야 함 중요!
+float Kp = 20;
+float Ki = 5;
+float Kd = 20; //PID 상수 설정, 실험에 따라 정해야 함 중요!
 double Setpoint, Input, Output; //PID 제어 변수
 double error, error_old;
 double error_s, error_d;
@@ -279,7 +279,7 @@ void control_callback()
   //Serial.println("----------------------");
   //Serial.println(sensorValue);
   // map it to the range of the analog out:
-  Steer_Angle_Measure = map(sensorValue, 100, 1023, LEFT_STEER_ANGLE, RIGHT_STEER_ANGLE);
+  Steer_Angle_Measure = map(sensorValue, 100, 1000, LEFT_STEER_ANGLE, RIGHT_STEER_ANGLE);
   //Serial.println(Steer_Angle_Measure);
   //Serial.println("-------------------------------");
   Steering_Angle = NEURAL_ANGLE + steer_angle;
