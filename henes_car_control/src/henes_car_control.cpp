@@ -101,10 +101,6 @@ void encoder1Callback(const std_msgs::Int32& encoder_data1)
 {
 	encoder1data = encoder_data1.data;
 }
-void encoder2Callback(const std_msgs::Int32& encoder_data2)
-{
-	encoder2data = encoder_data2.data;
-}
 
 
 void CarControlCallback(const geometry_msgs::Twist& msg)
@@ -178,14 +174,6 @@ void sonar1Callback(const std_msgs::Float32& sonar_data)
 {
 	 sonar[0]= (float)(sonar_data.data);
 }
-void sonar2Callback(const std_msgs::Float32& sonar_data)
-{
-	 sonar[1]= (float)(sonar_data.data);
-}
-void sonar3Callback(const std_msgs::Float32& sonar_data)
-{
-	 sonar[2]= (float)(sonar_data.data);
-}
 
 
 void odometry_cal(void)
@@ -250,7 +238,6 @@ int main(int argc, char **argv)
   
   /*other*/
   ros::param::get("/imu_offest_angle",  imu_offset_angle);  
-  
   ros::param::get("~cmd_vel_topic", cmd_vel_topic);
   ros::param::get("~odom_pub_topic", odom_pub_topic);
   ros::param::get("~imu_topic", imu_topic); 
@@ -340,7 +327,7 @@ int main(int argc, char **argv)
     if(  (sonar[0]>0) && ( sonar[0] <= Sonar_Obstacle_Range )  ) 
     {
        motor_speed_cmd  = 0;
-       ROS_INFO("Sonar Obstacle detection : %3.2lf %3.2lf %3.2lf", sonar[0], sonar[1], sonar[2]);       
+       ROS_INFO("Sonar Obstacle detection : %3.2lf ", sonar[0]);       
     }    
     else
     {
@@ -357,9 +344,9 @@ int main(int argc, char **argv)
     ROS_INFO("Sonar : %5.1lf ", sonar[0]);
     
     //myBaseSensorData.encoder = -(encoder1data + encoder2data) / 2;
-    myBaseSensorData.encoder = -encoder2data;   //depend on encoder direction
-	odometry_cal();
-	myBaseSensorData.encoder_old =  myBaseSensorData.encoder;
+    myBaseSensorData.encoder = -encoder1data;   //depend on encoder direction
+    odometry_cal();
+    myBaseSensorData.encoder_old =  myBaseSensorData.encoder;
 	
 	
     //odom_oriention trans to odom_quat
@@ -396,7 +383,6 @@ int main(int argc, char **argv)
   
   return 0;
 }
-
 
 
 
