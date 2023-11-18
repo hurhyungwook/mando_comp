@@ -3,6 +3,7 @@
   <name>henes_car_control</name>
   <version>0.0.0</version>
   <description>The henes_car_control package</description>
+  <depend>tf</depend>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

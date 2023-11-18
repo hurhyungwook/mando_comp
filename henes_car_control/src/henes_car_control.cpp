@@ -245,7 +245,7 @@ int main(int argc, char **argv)
   
   std::string cmd_vel_topic = "cmd_vel";
   std::string odom_pub_topic = "odom";
-  std::string imu_topic = "handsfree/imu";
+  std::string imu_topic = "/imu/data";
    
   
   /*other*/
@@ -264,15 +264,11 @@ int main(int argc, char **argv)
   ros::Subscriber sub1 = n.subscribe("/cmd_vel", 10, &CarControlCallback);
   ros::Subscriber sub2 = n.subscribe("/Car_Control_cmd/SteerAngle_Int16",10, &CarSteerControlCallback);  
   ros::Subscriber sub3 = n.subscribe("/scan", 1000, &scanCallback);
-  ros::Subscriber subEncoder1 = n.subscribe("/encoder1",10,&encoder1Callback); // front  encoder data susscribe
-  ros::Subscriber subEncoder2 = n.subscribe("/encoder2",10,&encoder2Callback); // rear  encoder data susscribe
+  ros::Subscriber subEncoder1 = n.subscribe("/encoder1",10,&encoder1Callback); 
   ros::Subscriber subIMU = n.subscribe(imu_topic, 20, &imuCallback);  // imu data susscribe
  
   ros::Subscriber sonar_sub1 = n.subscribe("/sonar1", 10, &sonar1Callback);
-  ros::Subscriber sonar_sub2 = n.subscribe("/sonar2", 10, &sonar2Callback);
-  ros::Subscriber sonar_sub3 = n.subscribe("/sonar3", 10, &sonar3Callback);
-  
-  
+
   ros::Publisher teleop_cmd_vel_pub = n.advertise<geometry_msgs::Twist>("teleop_cmd_vel", 10);
   
   ros::Publisher car_control_pub1 = n.advertise<std_msgs::Int16>("Car_Control/SteerAngle_Int16", 10);
@@ -341,7 +337,7 @@ int main(int argc, char **argv)
     //printf("sonar %6.3lf \n",sonar);
     
     //////////////////// sonar obstacle detectioin //////////////////
-    if( ( (sonar[0]>0) && ( sonar[0] <= Sonar_Obstacle_Range ) ) || ( (sonar[1]>0) && ( sonar[1] <= Sonar_Obstacle_Range) ) ||  ( (sonar[2]>0) && ( sonar[2] <= Sonar_Obstacle_Range) ) ) 
+    if(  (sonar[0]>0) && ( sonar[0] <= Sonar_Obstacle_Range )  ) 
     {
        motor_speed_cmd  = 0;
        ROS_INFO("Sonar Obstacle detection : %3.2lf %3.2lf %3.2lf", sonar[0], sonar[1], sonar[2]);       
@@ -358,7 +354,7 @@ int main(int argc, char **argv)
     car_control_pub1.publish(steerangle);
     car_control_pub2.publish(carspeed);
     
-    ROS_INFO("Sonar : %5.1lf %5.1lf %5.1lf", sonar[0], sonar[1], sonar[2]);
+    ROS_INFO("Sonar : %5.1lf ", sonar[0]);
     
     //myBaseSensorData.encoder = -(encoder1data + encoder2data) / 2;
     myBaseSensorData.encoder = -encoder2data;   //depend on encoder direction
