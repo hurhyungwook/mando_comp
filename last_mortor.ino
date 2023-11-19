@@ -25,7 +25,7 @@ void cmd_vel_callback(const geometry_msgs::Twist&msg){
   if(velocity>=255) velocity=255;
   if(velocity<=-255) velocity=-255;
 }
-ros::Subscriber<geometry_msgs::Twist> cmd_sub("cmd_vel", cmd_vel_callback);
+ros::Subscriber<geometry_msgs::Twist> cmd_sub("teleop_cmd_vel", cmd_vel_callback);
 ros::Publisher cmd_pub("cmd_vel2", &cmd_vel);
 ros::Publisher encoder_pub1("encoder1", &encoder_data1);
 ros::Publisher encoder_pub2("encoder2", &encoder_data2);
